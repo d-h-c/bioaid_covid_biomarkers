@@ -1,5 +1,5 @@
 
-This is code for the analysis in the paper:
+This is code for the analysis performed by Heather R. Jackson for the paper:
 
 # Differentiation of COVID-19 from other emergency infectious disease presentations using whole blood transcriptomics then rapid qPCR: a case-control and observational cohort study
 
