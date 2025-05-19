@@ -18,53 +18,6 @@ library(gridExtra)
 # first load in metadata
 meta <- read.csv(file = 'data/validation/RT-PCR_validation_phenotypes.csv', header = T)
 
-# look at distribution of zeros for each gene and group 
-zeroes <- read.csv(file = 'data/validation/sample_and_assays_selected_COUNT.csv', header = T)
-zeroes$group <- meta$group_short[match(zeroes$Sample, meta$ID)]
-table(zeroes$group, zeroes$CDKN1C_6036y)
-
-# need to calculate how many zeroes there are for each gene in each disease group 
-zeroes_df <- matrix(ncol = 11, nrow = length(levels(as.factor(zeroes$group))))
-for(i in 3:13){
-  df <- data.frame(group = zeroes$group, 
-                   gene = zeroes[,i])
-  zeroes_group <- data.frame(table(df$group, df$gene)[,'0'])
-  zeroes_df[,i-2] <- zeroes_group[,1]
-}
-zeroes_df <- data.frame(zeroes_df)
-rownames(zeroes_df) <- levels(as.factor(zeroes$group))
-colnames(zeroes_df) <- colnames(zeroes)[3:13]
-zeroes_df$group <- rownames(zeroes_df)
-
-zeroes_df <- pivot_longer(zeroes_df, cols = 1:11)
-
-zeroes_df$proportion_group <- NA
-zeroes_df$proportion_group <- paste(round(unlist(lapply(levels(as.factor(zeroes_df$group)), function(x){
-  (zeroes_df$value[zeroes_df$group==x]/table(zeroes$group)[x])*100
-})),2), "%", sep = "")
-zeroes_df$proportion_group[zeroes_df$proportion_group=="0%"] <- NA
-
-pdf(file = 'figures/zeroes_plot.pdf', height = 10, width = 12)
-ggplot(zeroes_df[!zeroes_df$name=="GAPDH_ref",], aes(y = name, x = value, fill = group))+
-  geom_bar(stat = 'identity', position = 'dodge')+
-  theme_bw()+
-  scale_fill_viridis_d()+
-  labs(y = '', x = "Number of zeroes", fill = "Disease group")+
-  geom_text(aes(label=proportion_group), 
-            position=position_dodge(width=0.9), 
-            hjust=-0.2, 
-            size = 3)
-dev.off()
-
-pdf(file = 'figures/zeroes_per_sample.pdf', height = 6, width = 8)
-ggplot(zeroes[!is.na(zeroes$group),], aes(y = group, x = ZEROS, fill = group))+
-  theme_bw()+
-  geom_violin()+
-  geom_point()+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  scale_fill_viridis_d()+
-  labs(x = "Number of zeroes", y = "", fill = "")
-dev.off()
 
 ###############
 
@@ -76,11 +29,10 @@ ct_values$CT[ct_values$CT==999] <- 40
 
 # what is the range of GAPDH
 ct_values$CT[ct_values$Gene=="GAPDH_ref"]
+samples.remove  <- read.csv("data/validation/samples_no_gapdh.csv", header = F)[,1]
 
 # some have no GADPH so remove those 
-remove <- unique(ct_values$Sample[!ct_values$Sample %in% zeroes$Sample]) 
-
-ct_values <- ct_values[!ct_values$Sample %in% remove,]
+ct_values <- ct_values[!ct_values$Sample %in% samples.remove,]
 
 even_indexes <- seq(2,nrow(ct_values),2)
 odd_indexes <- seq(1,nrow(ct_values)-1,2)
